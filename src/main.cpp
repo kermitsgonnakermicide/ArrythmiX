@@ -1,15 +1,22 @@
 #include <NimBLEDevice.h>
 #include <Arduino.h>
+#include "LSM6DS3.h"
 #define SAMPLE_PERIOD 2778
 #define ECG_PIN   A0    // Analog ECG output
 #define LO_PLUS    D8    // Lead-off detection +
 #define LO_MINUS   D7    // Lead-off detection -
-#define BATTERY_PIN A9
+#define BATTERY_PIN A5
 bool low_battery = false;
-void blinkLed() {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(200);
-    digitalWrite(LED_BUILTIN, LOW);
+LSM6DS3 myIMU(I2C_MODE, 0x6A);    //I2C device address 0x6A
+
+void blinkLed(int color, int no) {
+        digitalWrite(color, HIGH);
+        delay(200);
+        digitalWrite(color, LOW);
+        delay(200);
+        digitalWrite(color, HIGH);
+        delay(200);
+        digitalWrite(color, LOW);
 }
 NimBLECharacteristic* characteristic;
 void beginAdvertising() {
@@ -31,6 +38,7 @@ public:
     bool connected = false;
     void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
         Serial.println("Device Connected");
+        blinkLed(LED_GREEN,2);
         connected = true;
     }
     void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
@@ -45,7 +53,7 @@ void setup() {
     delay(5000);
     Serial.begin(115200);
     pinMode(LED_BUILTIN, OUTPUT);
-    blinkLed();
+    blinkLed(LED_BLUE,2);
 
     NimBLEDevice::init("ECG Data");
     NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM);
@@ -78,13 +86,29 @@ void setup() {
     pinMode(LO_MINUS, INPUT_PULLUP);
     beginAdvertising();
     Serial.println("NimBLE running");
+    blinkLed(LED_GREEN,3);
     Serial.println(NimBLEDevice::getAddress().toString().c_str());
+    if (myIMU.begin() != 0) {
+        Serial.println("Device error");
+    } else {
+        Serial.println("Device OK!");
+    }
 }
 
 int i = 0;
 unsigned long timeSinceLastBlink = 0;
 bool builtinLed_Status = false;
 void loop() {
+    Serial.print("\nAccelerometer:\n");
+    Serial.print(" X1 = ");
+    Serial.println(myIMU.readFloatAccelX(), 4);
+    Serial.print(" Y1 = ");
+    Serial.println(myIMU.readFloatAccelY(), 4);
+    Serial.print(" Z1 = ");
+    Serial.println(myIMU.readFloatAccelZ(), 4);
+    Serial.print("\nThermometer:\n");
+    Serial.print(" Degrees C1 = ");
+    Serial.println(myIMU.readTempC(), 4);
     if (low_battery) {
         if (millis() - timeSinceLastBlink > 200) {
             if (builtinLed_Status) {
@@ -105,6 +129,7 @@ void loop() {
         int loMinusState = digitalRead(LO_MINUS);
         if (loPlusState == HIGH || loMinusState == HIGH) {
             Value = "Leads Off";
+            blinkLed(LED_RED,2);
         } else {
             int ecgValue = analogRead(ECG_PIN);
             Value = String(ecgValue);
@@ -112,5 +137,6 @@ void loop() {
     }
     characteristic->setValue(Value.c_str());
     characteristic->notify();
+
     delay(20);
 }
