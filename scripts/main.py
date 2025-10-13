@@ -2,7 +2,6 @@ import simplepyble
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from collections import deque
-import struct
 from numpy import mean
 
 # === Configuration ===
