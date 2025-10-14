@@ -2,9 +2,9 @@
 #include <Arduino.h>
 #include "LSM6DS3.h"
 #define SAMPLE_PERIOD 2778
-#define ECG_PIN   A0    // Analog ECG output
-#define LO_PLUS    D8    // Lead-off detection +
-#define LO_MINUS   D7    // Lead-off detection -
+#define ECG_PIN    A0    // Analog ECG output
+#define LO_PLUS    D1    // Lead-off detection + //try changing to d2
+#define LO_MINUS   D2    // Lead-off detection -
 #define BATTERY_PIN A5
 bool low_battery = false;
 LSM6DS3 myIMU(I2C_MODE, 0x6A);    //I2C device address 0x6A
@@ -67,7 +67,7 @@ void setup() {
     pManufChar->setValue("Embedded Jankineers");
     NimBLECharacteristic* pModelChar = pDIS->createCharacteristic(
         "2A24",
-        NIMBLE_PROPERTY::READ
+        READ
     );
     pModelChar->setValue("ECG Device Model 1");
     pDIS->start();
@@ -99,16 +99,16 @@ int i = 0;
 unsigned long timeSinceLastBlink = 0;
 bool builtinLed_Status = false;
 void loop() {
-    Serial.print("\nAccelerometer:\n");
-    Serial.print(" X1 = ");
-    Serial.println(myIMU.readFloatAccelX(), 4);
-    Serial.print(" Y1 = ");
-    Serial.println(myIMU.readFloatAccelY(), 4);
-    Serial.print(" Z1 = ");
-    Serial.println(myIMU.readFloatAccelZ(), 4);
-    Serial.print("\nThermometer:\n");
-    Serial.print(" Degrees C1 = ");
-    Serial.println(myIMU.readTempC(), 4);
+    // Serial.print("\nAccelerometer:\n");
+    // Serial.print(" X1 = ");
+    // Serial.println(myIMU.readFloatAccelX(), 4);
+    // Serial.print(" Y1 = ");
+    // Serial.println(myIMU.readFloatAccelY(), 4);
+    // Serial.print(" Z1 = ");
+    // Serial.println(myIMU.readFloatAccelZ(), 4);
+    // Serial.print("\nThermometer:\n");
+    // Serial.print(" Degrees C1 = ");
+    // Serial.println(myIMU.readTempC(), 4);
     if (low_battery) {
         if (millis() - timeSinceLastBlink > 200) {
             if (builtinLed_Status) {
@@ -127,13 +127,15 @@ void loop() {
         lastSampleTime += SAMPLE_PERIOD;
         int loPlusState = digitalRead(LO_PLUS);
         int loMinusState = digitalRead(LO_MINUS);
-        if (loPlusState == HIGH || loMinusState == HIGH) {
-            Value = "Leads Off";
-            blinkLed(LED_RED,2);
-        } else {
-            int ecgValue = analogRead(ECG_PIN);
+        unsigned long ecgValue = analogRead(ECG_PIN);
+         if (loPlusState == HIGH || loMinusState == HIGH) {
+             Value = "Leads Off";
+             blinkLed(LED_RED,2);
+         } else {
+
             Value = String(ecgValue);
         }
+        Serial.println(Value);
     }
     characteristic->setValue(Value.c_str());
     characteristic->notify();

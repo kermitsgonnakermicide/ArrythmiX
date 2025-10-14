@@ -85,8 +85,9 @@ class App(customtkinter.CTk):
         """Initializes and starts the Bluetooth connection thread."""
         self.bt_thread = threading.Thread(target=self.start_bluetooth, daemon=True)
         self.bt_thread.start()
-
+    window = 100
     def notification_callback(self, received_bytes):
+        global window
         """Handles incoming data from the BLE characteristic."""
         if received_bytes == b"Leads Off":
             self.status_text.set("Status: Leads Off")
@@ -95,10 +96,12 @@ class App(customtkinter.CTk):
             adc_value = float(received_bytes.decode('utf-8').strip())
             voltage = (adc_value / 4095) * REFERENCE_VOLTAGE
             self.data.append(voltage)
-
-            if len(self.data) == MAX_POINTS:
-                prediction = self.predictor.get_prediction(list(self.data))
-                self.prediction_label_text.set(f"Prediction: {prediction}")
+            if self.status_text == "Leads Off":
+                self.status_text.set("Status: ECG Receiving")
+            if len(self.data) >= MAX_POINTS:
+                # prediction = self.predictor.get_prediction(list(self.data))
+                self.prediction_label_text.set(f"Prediction: {"TBD"}")
+                print("ran prediction")
 
         except (ValueError, UnicodeDecodeError):
             self.status_text.set(f"Status: Error decoding data")

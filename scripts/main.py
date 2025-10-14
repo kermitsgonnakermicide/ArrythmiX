@@ -27,7 +27,7 @@ def notification_callback(received_bytes):
     try:
 
         adc_value = float(received_bytes.decode('utf-8').strip())
-        voltage = (adc_value / 4095) * REFERENCE_VOLTAGE
+        voltage = (adc_value / 1024) * REFERENCE_VOLTAGE
         print(f"Voltage: {voltage:.2f}V, Mean: {mean(data):.2f}V")
         data.append(voltage)
     except (ValueError, UnicodeDecodeError):

@@ -53,7 +53,6 @@ class predictor():
 
     def get_prediction(self, data):
             data_chunk = np.array(data)
-
             preprocessed_chunk = preprocess_live_chunk(data_chunk, self.train_means, self.train_stds, fold_index=self.inference_fold_index)
             preprocessed_chunk = preprocessed_chunk.to(device)
             with torch.no_grad():
