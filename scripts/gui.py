@@ -24,8 +24,8 @@ customtkinter.set_default_color_theme("blue")
 plt.style.use('dark_background')
 
 class App(customtkinter.CTk):
-    def __init__(self):
-        super().__init__()
+    def _init_(self):
+        super()._init_()
 
         self.title("Live ECG Data")
         self.geometry("1000x700")
@@ -35,6 +35,8 @@ class App(customtkinter.CTk):
         self.prediction_label_text = customtkinter.StringVar(value="Prediction: N/A")
 
         self.status_text = customtkinter.StringVar(value="Status: Initializing...")
+        self.data_counter = 0
+        self.is_predicting = False
 
         self._setup_ui()
         self._start_bluetooth_thread()
@@ -85,23 +87,37 @@ class App(customtkinter.CTk):
         """Initializes and starts the Bluetooth connection thread."""
         self.bt_thread = threading.Thread(target=self.start_bluetooth, daemon=True)
         self.bt_thread.start()
-    window = 100
+
+    def _run_prediction_thread(self):
+        """Runs prediction in a background thread to avoid blocking the UI."""
+        self.is_predicting = True
+        try:
+            prediction = self.predictor.get_prediction(list(self.data))
+            self.prediction_label_text.set(f"Prediction: {prediction}")
+            print("ran prediction")
+        finally:
+            self.is_predicting = False
+
     def notification_callback(self, received_bytes):
-        global window
-        """Handles incoming data from the BLE characteristic."""
+        """Handles incoming data from the BLE characteristic."""z
         if received_bytes == b"Leads Off":
             self.status_text.set("Status: Leads Off")
             return
         try:
             adc_value = float(received_bytes.decode('utf-8').strip())
-            voltage = (adc_value / 4095) * REFERENCE_VOLTAGE
+            voltage = (adc_value / 1023) * REFERENCE_VOLTAGE
             self.data.append(voltage)
-            if self.status_text == "Leads Off":
+            self.data_counter += 1
+
+            if self.status_text.get() == "Leads Off":
                 self.status_text.set("Status: ECG Receiving")
-            if len(self.data) >= MAX_POINTS:
-                # prediction = self.predictor.get_prediction(list(self.data))
-                self.prediction_label_text.set(f"Prediction: {"TBD"}")
-                print("ran prediction")
+
+            # Predict every 40 data points
+            if self.data_counter >= 40 and not self.is_predicting:
+                self.data_counter = 0
+                if len(self.data) == MAX_POINTS:
+                    thread = threading.Thread(target=self._run_prediction_thread, daemon=True)
+                    thread.start()
 
         except (ValueError, UnicodeDecodeError):
             self.status_text.set(f"Status: Error decoding data")
@@ -155,6 +171,6 @@ class App(customtkinter.CTk):
                 ecg_device.disconnect()
             self.status_text.set("Status: Disconnected.")
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     app = App()
     app.mainloop()
