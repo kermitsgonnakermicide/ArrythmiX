@@ -2,11 +2,14 @@
 #include <Arduino.h>
 #include "LSM6DS3.h"
 #define SAMPLE_PERIOD 2778
+#define LOW_POWER
 #define TIMER_INTERRUPT_DEBUG         0
 #define _TIMERINTERRUPT_LOGLEVEL_     0
 #include <NRF52TimerInterrupt.h>
 #include <NRF52_ISR_Timer.h>
-
+#define BUFFER_SIZE 10
+uint16_t data_buffer[BUFFER_SIZE];
+uint8_t cursor = 0;
 #define ECG_PIN    A0    // Analog ECG output
 #define LO_PLUS    D1    // Lead-off detection + //try changing to d2
 #define LO_MINUS   D2    // Lead-off detection -
@@ -26,7 +29,6 @@ void blinkLed(int color, int no) {
 }
 NimBLECharacteristic* characteristic;
 void beginAdvertising() {
-    Serial.println("Advertising");
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->setName("ECG Data");
 
@@ -43,6 +45,7 @@ class BLEStatus : public NimBLEServerCallbacks {
 public:
     bool connected = false;
     void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
+        pServer->updateConnParams(connInfo.getConnHandle(), 24, 48, 0, 400);
         blinkLed(LED_GREEN,2);
         connected = true;
     }
@@ -52,21 +55,31 @@ public:
     }
 };
 void sendECGData() {
-    String Value;
+    static char string_buffer[12];
+
     int loPlusState = digitalRead(LO_PLUS);
     int loMinusState = digitalRead(LO_MINUS);
-    unsigned long ecgValue = analogRead(ECG_PIN);
+
     if (loPlusState == HIGH || loMinusState == HIGH) {
-        Value = "Leads Off";
-        blinkLed(LED_RED,2);
+        data_buffer[cursor] = 0; //leads off
+        cursor++;
     } else {
-        Value = String(ecgValue);
+        uint16_t ecgValue = analogRead(ECG_PIN);
+        data_buffer[cursor] = ecgValue;
+        cursor++;
     }
-    characteristic->setValue(Value.c_str());
-    characteristic->notify();
+    if (cursor >= BUFFER_SIZE) {
+        characteristic->setValue((uint8_t*)data_buffer,cursor * 2);
+        characteristic->notify();
+        cursor = 0;
+    }
 }
+
 BLEStatus bleStatus;
 void setup() {
+    #ifdef LOW_POWER
+    NRF_POWER->DCDCEN = 1;
+    #endif
     delay(5000);
     pinMode(LED_BUILTIN, OUTPUT);
     blinkLed(LED_BLUE,2);
