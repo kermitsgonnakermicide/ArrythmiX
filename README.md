@@ -24,4 +24,4 @@ the prediction of caridiac events
 <br>
 <img src="images/image(3).png" alt="train and vall graphs">    
 <br>
-![img.png](images/img_1.png)
+<img src="images/img.png" alt="routed PCB">    
