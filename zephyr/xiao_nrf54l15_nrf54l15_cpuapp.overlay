@@ -1,0 +1,22 @@
+/ {
+	aliases {
+		leads_pos = &leads_off_pos;
+		leads_negative = &leads_off_negative;
+	};
+	zephyr,user {
+		io-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 3>,
+					  <&adc 4>, <&adc 5>, <&adc 6>, <&adc 7>;
+	};
+
+	leads_off {
+		compatible = "gpio-keys";
+		leads_off_pos: d1{
+			gpios = <&gpio0 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Leads Off Positive";
+		};
+		leads_off_negative: d2 {
+			gpios = <&gpio0 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Leads Off Negative";
+		};
+	};
+};
