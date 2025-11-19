@@ -2,10 +2,10 @@
 	aliases {
 		leads_pos = &leads_off_pos;
 		leads_negative = &leads_off_negative;
+
 	};
 	zephyr,user {
-		io-channels = <&adc 0>, <&adc 1>, <&adc 2>, <&adc 3>,
-					  <&adc 4>, <&adc 5>, <&adc 6>, <&adc 7>;
+		ecg = <&adc0>;
 	};
 
 	leads_off {
