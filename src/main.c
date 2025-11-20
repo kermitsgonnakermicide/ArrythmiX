@@ -19,7 +19,6 @@ static struct bt_uuid_128 ecg_service_uuid = BT_UUID_INIT_128(ECG_SERVICE_UUID_V
 static struct bt_uuid_128 ecg_char_uuid = BT_UUID_INIT_128(ECG_CHAR_UUID_VAL);
 
 static bool notify_enabled = false;
-
 static void ecg_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
     notify_enabled = (value == BT_GATT_CCC_NOTIFY);
@@ -27,7 +26,6 @@ static void ecg_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 }
 #define DATA_LENGTH 20
 static uint16_t ecg_data[DATA_LENGTH];
-
 BT_GATT_SERVICE_DEFINE(ecg_service,
     BT_GATT_PRIMARY_SERVICE(&ecg_service_uuid),
     BT_GATT_CHARACTERISTIC(&ecg_char_uuid.uuid,
@@ -136,13 +134,11 @@ int main(void)
         LOG_ERR("Failed to configure lo_neg");
         return -1;
     }
-
     ret = adc_channel_setup_dt(&ecg_adc);
     if (ret < 0) {
         LOG_ERR("ADC channel setup failed");
         return -1;
     }
-
     ret = adc_sequence_init_dt(&ecg_adc, &sequence);
     if (ret < 0) {
         LOG_ERR("ADC sequence init failed");
